@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">STM32update</string>
+    <string name="textview">接收字符</string>
 </resources>

@@ -13,7 +13,7 @@
         android:layout_weight="7"
         android:padding="10dp"
         android:textColor="@color/colorYAHEI"
-        android:textSize="14sp" />
+        android:textSize="18sp" />
 
     <CheckBox
         android:id="@+id/file_checkbox"
@@ -25,6 +25,8 @@
         android:clickable="false"
         android:button="@drawable/checkbox_selector"
         android:gravity="center|center_vertical"
-        android:padding="10dp" />
+        android:padding="10dp"
+        android:layout_marginLeft="5sp"
+        />
 
 </LinearLayout>

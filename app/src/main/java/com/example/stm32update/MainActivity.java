@@ -1,13 +1,20 @@
 package com.example.stm32update;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.example.stm32update.adapter.LeDeviceListAdapter;
 import com.example.stm32update.widgets.CustomsDialog;
@@ -30,6 +37,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initView();
+        checkBluetooth();
     }
 
     private void initView() {
@@ -52,11 +61,156 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             if (device == null) {
                 return;
             }
-            //showDialog(device);//jump function
+            showOTAActivity(device);//跳转到OTA界面
+        }
+    };
+    private void showOTAActivity(BluetoothDevice device){
+        Intent intent = new Intent(MainActivity.this,OTAAcivity.class);// -----------转到OTAActivity
+        intent.putExtra(OTAAcivity.EXTRAS_DEVICE_NAME,device.getName());
+        intent.putExtra(OTAAcivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+        startActivity(intent);
+    }
+    /**
+     * 检查设备是否提供蓝牙
+     */
+    private void checkBluetooth() {
+        // 检查当前手机是否支持ble 蓝牙,如果不支持退出程序
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            Toast.makeText(this, "没有提供蓝牙", Toast.LENGTH_SHORT).show();
+            //finish();
+        }
+
+        // 初始化 Bluetooth adapter, 通过蓝牙管理器得到一个参考蓝牙适配器(API必须在以上android4.3或以上和版本)
+        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        mBluetoothAdapter = bluetoothManager.getAdapter();
+
+        // 检查设备上是否支持蓝牙
+        if (mBluetoothAdapter == null) {
+            Toast.makeText(this, "设备不支持蓝牙", Toast.LENGTH_SHORT).show();
+            //finish();
+            return;
+        }
+    }
+    /**
+     * 启动的时候要扫描蓝牙设备
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 为了确保设备上蓝牙能使用, 如果当前蓝牙设备没启用,弹出对话框向用户要求授予权限来启用
+        if (!mBluetoothAdapter.isEnabled()) {
+            if (!mBluetoothAdapter.isEnabled()) {
+                Intent enableBtIntent = new Intent(
+                        BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            }
+        }
+        // Initializes list view adapter.
+        mLeDeviceListAdapter = new LeDeviceListAdapter(this);
+        //添加到蓝牙设备
+        mDeviceList.setAdapter(mLeDeviceListAdapter);
+        //自动扫描
+        autoRefresh();
+    }
+    /**
+     * 自动执行刷新
+     */
+    public void autoRefresh(){
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                scanLeDevice(true);
+                mRefresh.setRefreshing(false);
+            }
+        }, 1000);
+        mRefresh.setRefreshing(true);  //直接调用是没有用的
+    }
+    private void scanLeDevice(final boolean enable) {
+        if (enable) {
+            // Stops scanning after a pre-defined scan period.
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                    /**
+                     * 停止扫描后需要自动连接
+                     */
+                    Log.i("check times", "we end!");
+                }
+            }, SCAN_PERIOD);
+            Log.i("check times", "we starting!");
+            mBluetoothAdapter.startLeScan(mLeScanCallback);//-----------------扫描蓝牙-----------
+
+        }else{
+            //停止扫描
+            mBluetoothAdapter.stopLeScan(mLeScanCallback);
+        }
+    }
+    // 找到设备回调  处理机制
+    private BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
+        @Override
+        public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    //要指定这样子的设备才能添加进去
+                    mLeDeviceListAdapter.addDevice(device);
+                    mLeDeviceListAdapter.notifyDataSetChanged();//  ------------刷新Adapter适配器
+                }
+            });
         }
     };
     @Override
     public void onRefresh() {
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                // 为了确保设备上蓝牙能使用, 如果当前蓝牙设备没启用,弹出对话框向用户要求授予权限来启用
+                if (!mBluetoothAdapter.isEnabled()) {
+                    if (!mBluetoothAdapter.isEnabled()) {
+                        Intent enableBtIntent = new Intent(
+                                BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                        startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+                    }
+                }
+                //if(isSet){
+                // Initializes list view adapter.
+                mLeDeviceListAdapter = new LeDeviceListAdapter(MainActivity.this);
 
+                //添加到蓝牙设备
+                mDeviceList.setAdapter(mLeDeviceListAdapter);
+                scanLeDevice(true);
+                // 停止刷新
+                mRefresh.setRefreshing(false);
+            }
+        }, 2000); // 5秒后发送消息，停止刷新
+    }
+    /**
+     * 退出程序显示提示
+     */
+    private long mExitTime;
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (event.getKeyCode() == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN
+                && event.getRepeatCount() == 0) {
+            if ((System.currentTimeMillis() - mExitTime) > 2000) {
+                Toast.makeText(this, "再按一次退出程序", Toast.LENGTH_SHORT).show();
+                mExitTime = System.currentTimeMillis();
+            }
+            else {
+                //ActivityCollector.finishAll();
+                finish();
+                System.exit(0);
+            }
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(mLeScanCallback!=null){
+            mLeScanCallback = null;
+        }
     }
 }

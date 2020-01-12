@@ -2,9 +2,9 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="50dip"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:gravity="center_vertical"
-    android:background="@color/colorNav"
-    >
+    android:background="@color/colorNav">
     <LinearLayout
         android:orientation="horizontal"
         android:layout_centerInParent="true"
@@ -22,5 +22,12 @@
             android:layout_marginTop="8dp"
             android:text="@string/app_name" />
     </LinearLayout>
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="10dp"
+        app:srcCompat="@drawable/top_icon" />
 
 </RelativeLayout>
