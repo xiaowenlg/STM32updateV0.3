@@ -19,9 +19,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.webkit.MimeTypeMap;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -62,6 +64,25 @@ public class OTAAcivity extends AppCompatActivity implements View.OnClickListene
     private String deviceName;
     private YModem yModem;
     private boolean sendData;
+
+    private EditText mPass0;
+    private EditText mPass;
+    private EditText mPass2;
+    private EditText mPass3;
+    private EditText mPass4;
+    private EditText mPass5;
+    private EditText mPass6;
+    private EditText mPass7;
+    private EditText mPass8;
+    private EditText mPass9;
+    private EditText mPass10;
+    private EditText mPass11;
+
+
+
+
+
+
     //加载文件相关
     private OTAFileListAdapter mFirmwareAdapter;
     private ListView mFileListView;
@@ -105,6 +126,31 @@ public class OTAAcivity extends AppCompatActivity implements View.OnClickListene
         updateinfo = findViewById(R.id.updateinfo);
         updateinfo.setMovementMethod(ScrollingMovementMethod.getInstance());
         updateinfo.setScrollbarFadingEnabled(false);
+        mPass0 = findViewById(R.id.pass0);
+        mPass = findViewById(R.id.pass);
+        mPass2 = findViewById(R.id.pass2);
+        mPass3 = findViewById(R.id.pass3);
+        mPass4 = findViewById(R.id.pass4);
+        mPass5 = findViewById(R.id.pass5);
+        mPass6 = findViewById(R.id.pass6);
+        mPass7 = findViewById(R.id.pass7);
+        mPass8 = findViewById(R.id.pass8);
+        mPass9 = findViewById(R.id.pass9);
+        mPass10 = findViewById(R.id.pass10);
+        mPass11 = findViewById(R.id.pass11);
+        mPass0.setInputType(EditorInfo.TYPE_CLASS_PHONE);
+        mPass.setInputType(EditorInfo.TYPE_CLASS_PHONE);
+        mPass2.setInputType(EditorInfo.TYPE_CLASS_PHONE);
+        mPass3.setInputType(EditorInfo.TYPE_CLASS_PHONE);
+        mPass4.setInputType(EditorInfo.TYPE_CLASS_PHONE);
+        mPass5.setInputType(EditorInfo.TYPE_CLASS_PHONE);
+        mPass6.setInputType(EditorInfo.TYPE_CLASS_PHONE);
+        mPass7.setInputType(EditorInfo.TYPE_CLASS_PHONE);
+        mPass8.setInputType(EditorInfo.TYPE_CLASS_PHONE);
+        mPass9.setInputType(EditorInfo.TYPE_CLASS_PHONE);
+        mPass10.setInputType(EditorInfo.TYPE_CLASS_PHONE);
+        mPass11.setInputType(EditorInfo.TYPE_CLASS_PHONE);
+
 
     }
     private void initData(){
@@ -309,11 +355,36 @@ public class OTAAcivity extends AppCompatActivity implements View.OnClickListene
      * File Selection click event
      */
 
-
+    public byte[] GetPassWord(byte[] mcuid)
+    {
+        byte[] res = new byte[12];
+        byte[] ca ="cao-xiao-wen".getBytes();
+        for (int i=0;i<12;i++)
+        {
+            res[i] = (byte)( mcuid[i]^ca[i]);
+        }
+        return res;
+    }
     @Override
     public void onClick(View view) {
        if (view.getId()==R.id.sendbtn){
-           boolean isSuccess = bluetoothService.SendPassWord(OTAAcivity.mSendOTACharacteristic,"xiaowenlg".getBytes());//0x01为选择更新的标志
+          byte[] sendbyte = new byte[12];
+
+           sendbyte[0] = (byte)Integer.parseInt(mPass0.getText().toString());;
+           sendbyte[1] = (byte)Integer.parseInt(mPass.getText().toString());
+           sendbyte[2] = (byte)Integer.parseInt(mPass2.getText().toString());
+           sendbyte[3] = (byte)Integer.parseInt(mPass3.getText().toString());
+           sendbyte[4] = (byte)Integer.parseInt(mPass4.getText().toString());;
+           sendbyte[5] = (byte)Integer.parseInt(mPass5.getText().toString());
+           sendbyte[6] = (byte)Integer.parseInt(mPass6.getText().toString());
+           sendbyte[7] = (byte)Integer.parseInt(mPass7.getText().toString());
+           sendbyte[8] = (byte)Integer.parseInt(mPass8.getText().toString());;
+           sendbyte[9] = (byte)Integer.parseInt(mPass9.getText().toString());
+           sendbyte[10] = (byte)Integer.parseInt(mPass10.getText().toString());
+           sendbyte[11] = (byte)Integer.parseInt(mPass11.getText().toString());
+
+          // int da0 = Integer.parseInt(mPass0.getText().toString());
+          boolean isSuccess = bluetoothService.SendPassWord(OTAAcivity.mSendOTACharacteristic,GetPassWord(sendbyte));//0x01为选择更新的标志
             /*if(isSuccess){
                 startTransmission();
             }*/
